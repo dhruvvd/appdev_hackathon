@@ -1,0 +1,10 @@
+# Local virtualenv
+nsde/
+.venv/
+venv/
+
+__pycache__/
+*.py[cod]
+
+# Generated plots (run the script to reproduce)
+*.png

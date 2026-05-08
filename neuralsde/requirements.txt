@@ -1,0 +1,6 @@
+torch
+torchsde
+yfinance
+scikit-learn
+matplotlib
+jupyter
