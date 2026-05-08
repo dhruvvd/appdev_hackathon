@@ -1,0 +1,9 @@
+# Local virtualenv (do not commit)
+nba/
+
+# Trained binaries — run ``train.py`` after clone
+models_artifacts/
+
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/

@@ -1,0 +1,198 @@
+
+=== Inference for Adou Thiero (PID=1642876) ===
+
+Predicted next-game PTS for PID 1642876 (Adou Thiero): 16.94
+  Last-five actual PTS avg: 3.60
+
+
+=== Inference for Jarred Vanderbilt (PID=1629020) ===
+
+Predicted next-game PTS for PID 1629020 (Jarred Vanderbilt): 7.89
+  Last-five actual PTS avg: 4.00
+
+
+=== Inference for Dalton Knecht (PID=1642261) ===
+
+Predicted next-game PTS for PID 1642261 (Dalton Knecht): 18.71
+  Last-five actual PTS avg: 5.40
+
+
+=== Inference for Deandre Ayton (PID=1629028) ===
+
+Predicted next-game PTS for PID 1629028 (Deandre Ayton): 26.86
+  Last-five actual PTS avg: 13.80
+
+
+=== Inference for Bronny James (PID=1642355) ===
+
+Predicted next-game PTS for PID 1642355 (Bronny James): 17.68
+  Last-five actual PTS avg: 6.60
+
+
+=== Inference for Luke Kennard (PID=1628379) ===
+
+Predicted next-game PTS for PID 1628379 (Luke Kennard): 14.36
+  Last-five actual PTS avg: 12.20
+
+
+=== Inference for Jaxson Hayes (PID=1629637) ===
+
+Predicted next-game PTS for PID 1629637 (Jaxson Hayes): 24.87
+  Last-five actual PTS avg: 13.60
+
+
+=== Inference for Jake LaRavia (PID=1631222) ===
+
+Predicted next-game PTS for PID 1631222 (Jake LaRavia): 6.50
+  Last-five actual PTS avg: 7.20
+
+
+=== Inference for Maxi Kleber (PID=1628467) ===
+
+Predicted next-game PTS for PID 1628467 (Maxi Kleber): 15.79
+  Last-five actual PTS avg: 1.60
+
+
+=== Inference for Austin Reaves (PID=1630559) ===
+
+Predicted next-game PTS for PID 1630559 (Austin Reaves): 26.09
+  Last-five actual PTS avg: 20.80
+
+
+=== Inference for Drew Timme (PID=1631166) ===
+
+Predicted next-game PTS for PID 1631166 (Drew Timme): 18.00
+  Last-five actual PTS avg: 4.00
+
+
+=== Inference for Nick Smith Jr. (PID=1641733) ===
+
+Predicted next-game PTS for PID 1641733 (Nick Smith Jr.): 14.96
+  Last-five actual PTS avg: 7.80
+
+
+=== Inference for LeBron James (PID=2544) ===
+
+Predicted next-game PTS for PID 2544 (LeBron James): 13.33
+  Last-five actual PTS avg: 23.00
+
+
+=== Inference for Rui Hachimura (PID=1629060) ===
+
+Predicted next-game PTS for PID 1629060 (Rui Hachimura): 29.38
+  Last-five actual PTS avg: 16.60
+
+
+=== Inference for Chris Mañon (PID=1643024) ===
+⚠ inference skipped (Insufficient history for PID 1643024 — need ≥25 games (raise INFERENCE_LAST_N_GAMES / widen SEASONS / lower rolling windows).)
+
+=== Inference for Marcus Smart (PID=203935) ===
+
+Predicted next-game PTS for PID 203935 (Marcus Smart): 11.84
+  Last-five actual PTS avg: 6.20
+
+
+=== Inference for Luka Dončić (PID=1629029) ===
+
+Predicted next-game PTS for PID 1629029 (Luka Dončić): 19.65
+  Last-five actual PTS avg: 34.00
+
+
+=== Inference for Shai Gilgeous-Alexander (PID=1628983) ===
+
+Predicted next-game PTS for PID 1628983 (Shai Gilgeous-Alexander): 19.98
+  Last-five actual PTS avg: 28.00
+
+
+=== Inference for Jared McCain (PID=1642272) ===
+
+Predicted next-game PTS for PID 1642272 (Jared McCain): 8.71
+  Last-five actual PTS avg: 9.20
+
+
+=== Inference for Luguentz Dort (PID=1629652) ===
+
+Predicted next-game PTS for PID 1629652 (Luguentz Dort): 10.91
+  Last-five actual PTS avg: 7.60
+
+
+=== Inference for Jaylin Williams (PID=1631119) ===
+
+Predicted next-game PTS for PID 1631119 (Jaylin Williams): 14.35
+  Last-five actual PTS avg: 4.20
+
+
+=== Inference for Chet Holmgren (PID=1631096) ===
+
+Predicted next-game PTS for PID 1631096 (Chet Holmgren): 29.82
+  Last-five actual PTS avg: 17.20
+
+
+=== Inference for Jalen Williams (PID=1631114) ===
+
+Predicted next-game PTS for PID 1631114 (Jalen Williams): 26.37
+  Last-five actual PTS avg: 16.60
+
+
+=== Inference for Alex Caruso (PID=1627936) ===
+
+Predicted next-game PTS for PID 1627936 (Alex Caruso): 6.67
+  Last-five actual PTS avg: 4.40
+
+
+=== Inference for Isaiah Joe (PID=1630198) ===
+
+Predicted next-game PTS for PID 1630198 (Isaiah Joe): 24.57
+  Last-five actual PTS avg: 14.80
+
+
+=== Inference for Thomas Sorber (PID=1642850) ===
+⚠ inference skipped (No game logs returned for player_id=1642850 seasons=['2021-22', '2022-23', '2023-24', '2024-25', '2025-26'].)
+
+=== Inference for Payton Sandfort (PID=1642362) ===
+⚠ inference skipped (Insufficient history for PID 1642362 — need ≥25 games (raise INFERENCE_LAST_N_GAMES / widen SEASONS / lower rolling windows).)
+
+=== Inference for Branden Carlson (PID=1642382) ===
+
+Predicted next-game PTS for PID 1642382 (Branden Carlson): 29.26
+  Last-five actual PTS avg: 14.40
+
+
+=== Inference for Aaron Wiggins (PID=1630598) ===
+
+Predicted next-game PTS for PID 1630598 (Aaron Wiggins): 4.84
+  Last-five actual PTS avg: 5.60
+
+
+=== Inference for Cason Wallace (PID=1641717) ===
+
+Predicted next-game PTS for PID 1641717 (Cason Wallace): 4.90
+  Last-five actual PTS avg: 8.20
+
+
+=== Inference for Brooks Barnhizer (PID=1642964) ===
+
+Predicted next-game PTS for PID 1642964 (Brooks Barnhizer): 13.13
+  Last-five actual PTS avg: 4.20
+
+
+=== Inference for Ajay Mitchell (PID=1642349) ===
+
+Predicted next-game PTS for PID 1642349 (Ajay Mitchell): 15.11
+  Last-five actual PTS avg: 9.40
+
+
+=== Inference for Kenrich Williams (PID=1629026) ===
+
+Predicted next-game PTS for PID 1629026 (Kenrich Williams): 20.44
+  Last-five actual PTS avg: 7.60
+
+
+=== Inference for Nikola Topić (PID=1642260) ===
+⚠ inference skipped (Insufficient history for PID 1642260 — need ≥25 games (raise INFERENCE_LAST_N_GAMES / widen SEASONS / lower rolling windows).)
+
+=== Inference for Isaiah Hartenstein (PID=1628392) ===
+
+Predicted next-game PTS for PID 1628392 (Isaiah Hartenstein): 22.10
+  Last-five actual PTS avg: 6.60
+
