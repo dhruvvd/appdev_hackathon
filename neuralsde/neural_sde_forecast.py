@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import re
+from typing import Any
 
 import numpy as np
 import torch
@@ -152,9 +153,24 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-    ticker_display = args.ticker.strip().upper()
+def run_forecast(
+    ticker: str,
+    *,
+    num_epochs: int = 300,
+    num_paths: int = 100,
+    hidden_dim: int = 64,
+    learning_rate: float = 1e-3,
+    print_every: int = 50,
+    verbose: bool = True,
+    save_plots: bool = False,
+    show_plots: bool = False,
+) -> dict[str, Any]:
+    """
+    Train the neural SDE on yfinance daily closes and sample paths for uncertainty bands.
+
+    Returns JSON-serializable lists (for APIs); set ``save_plots`` / ``show_plots`` for CLI-style matplotlib output.
+    """
+    ticker_display = ticker.strip().upper()
     scaled_np, t_np, train_len, scaler = load_and_prepare_ticker(ticker_display)
     n = scaled_np.shape[0]
 
@@ -164,18 +180,14 @@ def main() -> None:
     ts_train = ts_full[:train_len].contiguous()
     y_train_target = scaled[:train_len].contiguous()
     y_val_target = scaled[train_len:].contiguous()
-    # Euler step size must match the imposed time grid (torchsde requires explicit dt here).
     dt_train = ts_train[1] - ts_train[0]
     dt_full = ts_full[1] - ts_full[0]
 
-    # Initial condition at first training time: shape (batch=1, state=1)
     y0_train = scaled[0].view(1, 1)
 
-    model = NeuralSDE(state_size=1, hidden_dim=64).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    model = NeuralSDE(state_size=1, hidden_dim=hidden_dim).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    num_epochs = 300
-    print_every = 50
     train_losses: list[float] = []
     val_losses: list[float] = []
 
@@ -183,7 +195,6 @@ def main() -> None:
     for epoch in range(1, num_epochs + 1):
         optimizer.zero_grad(set_to_none=True)
 
-        # Simulate path on training grid; ys has shape (len(ts_train), batch, state_size)
         ys_train = torchsde.sdeint(
             model,
             y0_train,
@@ -192,12 +203,11 @@ def main() -> None:
             method="euler",
             adaptive=False,
         )
-        pred_train = ys_train.squeeze(-1).squeeze(-1)  # (T_train,)
+        pred_train = ys_train.squeeze(-1).squeeze(-1)
         train_loss = torch.mean((pred_train - y_train_target) ** 2)
         train_loss.backward()
         optimizer.step()
 
-        # Validation: same initial condition, integrate full timeline; MSE on held-out tail only.
         with torch.no_grad():
             ys_full = torchsde.sdeint(
                 model,
@@ -213,18 +223,12 @@ def main() -> None:
         train_losses.append(float(train_loss.detach().cpu()))
         val_losses.append(float(val_loss.detach().cpu()))
 
-        if epoch == 1 or epoch % print_every == 0 or epoch == num_epochs:
+        if verbose and (epoch == 1 or epoch % print_every == 0 or epoch == num_epochs):
             print(
                 f"epoch {epoch:4d}/{num_epochs}  train_mse={train_losses[-1]:.6f}  val_mse={val_losses[-1]:.6f}"
             )
 
-    # -------------------------------------------------------------------------
-    # 4. Inference: many paths over full timeline (train + test), uncertainty bands
-    # -------------------------------------------------------------------------
     model.eval()
-    num_paths = 100
-
-    # Same starting observation for every path: (num_paths, state_size)
     y0_batch = scaled[0].view(1, 1).expand(num_paths, 1).contiguous()
 
     with torch.no_grad():
@@ -236,16 +240,14 @@ def main() -> None:
             method="euler",
             adaptive=False,
         )
-    # ys_paths: (T, batch=num_paths, state_size=1)
-    paths = ys_paths.squeeze(-1).cpu().numpy()  # (T, num_paths)
+    paths = ys_paths.squeeze(-1).cpu().numpy()
 
     mean_path = paths.mean(axis=1)
     std_path = paths.std(axis=1, ddof=0)
-    z = 1.96  # ~95% if Gaussian per time slice (visual band)
+    z = 1.96
     lower = mean_path - z * std_path
     upper = mean_path + z * std_path
 
-    # Inverse transform to dollars for plotting
     def inv_transform(arr_1d: np.ndarray) -> np.ndarray:
         return scaler.inverse_transform(arr_1d.reshape(-1, 1)).squeeze(-1)
 
@@ -254,43 +256,85 @@ def main() -> None:
     lower_dollars = inv_transform(lower)
     upper_dollars = inv_transform(upper)
 
-    plt.figure(figsize=(11, 5))
-    plt.plot(np.arange(train_len), actual_all[:train_len], color="black", linewidth=1.5, label="Actual (train)")
-    plt.plot(np.arange(train_len, n), actual_all[train_len:], color="red", linewidth=1.5, label="Actual (test / held-out)")
-    plt.plot(np.arange(n), mean_dollars, color="blue", linewidth=1.8, label="Mean predicted path (100 SDE samples)")
-    plt.fill_between(
-        np.arange(n),
-        lower_dollars,
-        upper_dollars,
-        color="blue",
-        alpha=0.22,
-        label="Approx. 95% band (mean ± 1.96·std across paths)",
-    )
-    plt.axvline(train_len - 0.5, color="gray", linestyle="--", linewidth=1.0, label="Train/test split")
-    plt.title(f"Neural SDE forecast with uncertainty — {ticker_display} daily close (last ~1y)")
-    plt.xlabel("Trading day index (chronological)")
-    plt.ylabel("Price (USD)")
-    plt.legend(loc="upper left", fontsize=8)
-    plt.tight_layout()
-    out_path = f"neural_sde_{ticker_slug(ticker_display)}_forecast.png"
-    plt.savefig(out_path, dpi=150)
-    print(f"Saved figure to {out_path}")
-    plt.show()
+    if save_plots or show_plots:
+        plt.figure(figsize=(11, 5))
+        plt.plot(np.arange(train_len), actual_all[:train_len], color="black", linewidth=1.5, label="Actual (train)")
+        plt.plot(np.arange(train_len, n), actual_all[train_len:], color="red", linewidth=1.5, label="Actual (test / held-out)")
+        plt.plot(
+            np.arange(n),
+            mean_dollars,
+            color="blue",
+            linewidth=1.8,
+            label=f"Mean predicted path ({num_paths} SDE samples)",
+        )
+        plt.fill_between(
+            np.arange(n),
+            lower_dollars,
+            upper_dollars,
+            color="blue",
+            alpha=0.22,
+            label="Approx. 95% band (mean ± 1.96·std across paths)",
+        )
+        plt.axvline(train_len - 0.5, color="gray", linestyle="--", linewidth=1.0, label="Train/test split")
+        plt.title(f"Neural SDE forecast with uncertainty — {ticker_display} daily close (last ~1y)")
+        plt.xlabel("Trading day index (chronological)")
+        plt.ylabel("Price (USD)")
+        plt.legend(loc="upper left", fontsize=8)
+        plt.tight_layout()
+        out_path = f"neural_sde_{ticker_slug(ticker_display)}_forecast.png"
+        if save_plots:
+            plt.savefig(out_path, dpi=150)
+            print(f"Saved figure to {out_path}")
+        if show_plots:
+            plt.show()
+        else:
+            plt.close()
 
-    epochs_axis = np.arange(1, num_epochs + 1)
-    plt.figure(figsize=(8, 4.5))
-    plt.plot(epochs_axis, train_losses, color="tab:blue", label="Train MSE")
-    plt.plot(epochs_axis, val_losses, color="tab:orange", label="Val MSE (held-out tail)")
-    plt.xlabel("Epoch")
-    plt.ylabel("MSE (scaled space)")
-    plt.title(f"Training curves — {ticker_display}")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    loss_path = f"neural_sde_{ticker_slug(ticker_display)}_loss.png"
-    plt.savefig(loss_path, dpi=150)
-    print(f"Saved figure to {loss_path}")
-    plt.show()
+        epochs_axis = np.arange(1, num_epochs + 1)
+        plt.figure(figsize=(8, 4.5))
+        plt.plot(epochs_axis, train_losses, color="tab:blue", label="Train MSE")
+        plt.plot(epochs_axis, val_losses, color="tab:orange", label="Val MSE (held-out tail)")
+        plt.xlabel("Epoch")
+        plt.ylabel("MSE (scaled space)")
+        plt.title(f"Training curves — {ticker_display}")
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        loss_path = f"neural_sde_{ticker_slug(ticker_display)}_loss.png"
+        if save_plots:
+            plt.savefig(loss_path, dpi=150)
+            print(f"Saved figure to {loss_path}")
+        if show_plots:
+            plt.show()
+        else:
+            plt.close()
+
+    day_index = np.arange(n, dtype=int).tolist()
+    return {
+        "ticker": ticker_display,
+        "n": int(n),
+        "train_len": int(train_len),
+        "num_epochs": int(num_epochs),
+        "num_paths": int(num_paths),
+        "day_index": day_index,
+        "actual_usd": actual_all.astype(float).tolist(),
+        "mean_usd": mean_dollars.astype(float).tolist(),
+        "lower_usd": lower_dollars.astype(float).tolist(),
+        "upper_usd": upper_dollars.astype(float).tolist(),
+        "train_losses": train_losses,
+        "val_losses": val_losses,
+        "final_train_mse": train_losses[-1] if train_losses else None,
+        "final_val_mse": val_losses[-1] if val_losses else None,
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    run_forecast(
+        args.ticker,
+        save_plots=True,
+        show_plots=True,
+    )
 
 
 if __name__ == "__main__":

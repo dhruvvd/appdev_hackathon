@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neural SDE Forecast</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Neural SDE forecast</h1>
+        <p>
+          Explore how a small neural stochastic model fits recent daily closing prices for any ticker we can pull
+          from Yahoo Finance. Pick a symbol, run a forecast, then read the plain-English summary below the charts.
+        </p>
+      </header>
+
+      <section class="panel" aria-label="Controls">
+        <div class="row">
+          <div class="field">
+            <label for="ticker">Ticker</label>
+            <input id="ticker" type="text" value="SPY" maxlength="16" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="epochs">Epochs</label>
+            <input id="epochs" type="number" value="300" min="10" max="800" />
+          </div>
+          <div class="field">
+            <label for="paths">Sample paths</label>
+            <input id="paths" type="number" value="100" min="10" max="500" />
+          </div>
+          <button type="button" class="primary" id="run">Run forecast</button>
+        </div>
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+
+      <section class="panel hidden" id="results" aria-label="Results">
+        <h2 class="results-title" id="resultsTitle">Results</h2>
+
+        <div class="interpret-root" id="interpretRoot"></div>
+
+        <details class="technical-details">
+          <summary>Technical details</summary>
+          <p class="technical-lede">
+            Numbers below are mainly for debugging and comparison runs. Smaller “scaled error” values usually mean
+            a tighter fit, but they are not dollars and don’t translate directly to profit or loss.
+          </p>
+          <div class="metrics" id="metrics"></div>
+        </details>
+
+        <div class="chart-section">
+          <h3 class="chart-heading">Closing price vs model</h3>
+          <p class="chart-caption" id="priceCaption"></p>
+          <div class="chart-box">
+            <canvas id="priceChart" role="img" aria-label="Price forecast chart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-section">
+          <h3 class="chart-heading">How training progressed</h3>
+          <p class="chart-caption" id="lossCaption"></p>
+          <div class="chart-box loss">
+            <canvas id="lossChart" role="img" aria-label="Training loss chart"></canvas>
+          </div>
+        </div>
+
+        <p class="disclaimer" id="resultsDisclaimer"></p>
+      </section>
+
+      <footer>
+        Educational demo — not investment advice. First run may take about a minute while the model trains.
+      </footer>
+    </div>
+  </body>
+</html>
