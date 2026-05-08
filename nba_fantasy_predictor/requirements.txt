@@ -1,8 +1,0 @@
-nba_api
-xgboost
-scikit-learn
-pandas
-numpy
-matplotlib
-joblib
-jupyter
