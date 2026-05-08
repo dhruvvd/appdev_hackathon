@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-End-to-end Neural SDE (Itô, diagonal noise) for daily closes via torchsde.
-
-Dependencies (Python 3.10+):
-    pip install torch torchsde yfinance matplotlib scikit-learn numpy
-
-Uses torchsde.sdeint only — no custom Euler–Maruyama loops.
-
-Example:
-    python neural_sde_forecast.py --ticker QQQ
-"""
 
 from __future__ import annotations
 
@@ -26,25 +15,15 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 
 
-# -----------------------------------------------------------------------------
-# Reproducibility
-# -----------------------------------------------------------------------------
 SEED = 42
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 
-# -----------------------------------------------------------------------------
-# Device
-# -----------------------------------------------------------------------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-# -----------------------------------------------------------------------------
-# 1. Data pipeline
-# -----------------------------------------------------------------------------
 def load_and_prepare_ticker(symbol: str):
-    """Download ~1 year of daily closes for ``symbol``, scale to [0.1, 0.9], build time grid."""
     symbol = symbol.strip().upper()
     ticker = yf.Ticker(symbol)
     df = ticker.history(period="5y", interval="1d")
@@ -54,7 +33,6 @@ def load_and_prepare_ticker(symbol: str):
         )
 
     closes = df["Close"].astype(np.float64).values.reshape(-1, 1)
-    # Drop any trailing NaNs from history()
     mask = np.isfinite(closes.squeeze(-1))
     closes = closes[mask]
 
@@ -62,7 +40,6 @@ def load_and_prepare_ticker(symbol: str):
     scaled = scaler.fit_transform(closes).astype(np.float64).squeeze(-1)
 
     n = scaled.shape[0]
-    # Time axis in [0, 1], one point per trading day (matches data length).
     t_np = np.linspace(0.0, 1.0, n, dtype=np.float64)
 
     train_len = int(np.floor(0.8 * n))
@@ -73,24 +50,12 @@ def load_and_prepare_ticker(symbol: str):
 
 
 def ticker_slug(symbol: str) -> str:
-    """Filesystem-safe fragment derived from ticker (e.g. BRK-B -> BRK-B kept alphanumeric-ish)."""
     s = symbol.strip().upper()
     s = re.sub(r"[^\w.\-]+", "_", s)
     return s or "TICKER"
 
 
 class NeuralSDE(nn.Module):
-    """
-    Neural Itô SDE with diagonal noise:
-        dX_t = f_theta(t, X_t) dt + g_phi(t, X_t) dW_t
-
-    torchsde expects:
-      - noise_type == "diagonal"
-      - sde_type == "ito"
-      - f(t, y), g(t, y) with y shape (batch_size, state_size)
-      - outputs same batch/state layout as y (diagonal g is a vector per batch row)
-    """
-
     noise_type = "diagonal"
     sde_type = "ito"
 
@@ -99,7 +64,6 @@ class NeuralSDE(nn.Module):
         self.state_size = state_size
         self.hidden_dim = hidden_dim
 
-        # Inputs: [state, time] -> state_size
         in_dim = state_size + 1
         self.drift_net = nn.Sequential(
             nn.Linear(in_dim, hidden_dim),
@@ -110,33 +74,20 @@ class NeuralSDE(nn.Module):
             nn.Linear(in_dim, hidden_dim),
             nn.Tanh(),
             nn.Linear(hidden_dim, state_size),
-            nn.Softplus(),  # strictly positive diffusion (variance contribution > 0)
+            nn.Softplus(),
         )
 
     def _time_feat(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """Broadcast scalar time t to shape (batch, 1) concatenated as extra input dim."""
         batch = y.shape[0]
-        # torchsde passes t as a scalar tensor (0-dim); avoid breaking autograd on y.
         t_float = float(t.reshape(-1)[0].detach())
         return torch.full((batch, 1), t_float, device=y.device, dtype=y.dtype)
 
     def f(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """
-        Drift f_theta(t, y): (batch, state_size).
-
-        y: (batch_size, state_size)
-        """
-        # Concatenate state and time along feature dimension -> (batch, state_size + 1)
         t_feat = self._time_feat(t, y)
         x_in = torch.cat([y, t_feat], dim=-1)
         return self.drift_net(x_in)
 
     def g(self, t: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-        """
-        Diffusion g_phi(t, y): (batch_size, state_size) for diagonal noise.
-
-        Positive entries via Softplus.
-        """
         t_feat = self._time_feat(t, y)
         x_in = torch.cat([y, t_feat], dim=-1)
         return self.diffusion_net(x_in)
@@ -165,11 +116,6 @@ def run_forecast(
     save_plots: bool = False,
     show_plots: bool = False,
 ) -> dict[str, Any]:
-    """
-    Train the neural SDE on yfinance daily closes and sample paths for uncertainty bands.
-
-    Returns JSON-serializable lists (for APIs); set ``save_plots`` / ``show_plots`` for CLI-style matplotlib output.
-    """
     ticker_display = ticker.strip().upper()
     scaled_np, t_np, train_len, scaler = load_and_prepare_ticker(ticker_display)
     n = scaled_np.shape[0]
